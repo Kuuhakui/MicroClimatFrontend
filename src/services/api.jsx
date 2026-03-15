@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-// Убедись, что в .env файле VITE_API_BASE_URL=http://localhost:8000
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 const api = axios.create({
@@ -31,14 +30,14 @@ api.interceptors.response.use(
 
 export default api;
 
-// === AUTH SERVICE (Port 8001) ===
+// === AUTH SERVICE ===
 export const authApi = {
   login: (credentials) => api.post('/auth/login', credentials),
   register: (userData) => api.post('/auth/register', userData),
   verify: () => api.get('/auth/verify'),
 };
 
-// === CORE SERVICE (Port 8002) ===
+// === CORE SERVICE ===
 export const coreApi = {
   getAllThresholds: () => api.get('/core/thresholds'),
   updateThreshold: (sensorType, threshold) => api.post(`/core/thresholds/${sensorType}`, threshold),
@@ -48,20 +47,34 @@ export const coreApi = {
   updateModelConfig: (config) => api.post('/core/models/config', config),
 };
 
-// === SENSOR & ROOM SERVICES (Ports 8004, 8006, 8003) ===
+// === DATA STORAGE SERVICE ===
+// Gateway: /data/sensors/ → http://data-storage-service:8003/data/sensors/
 export const sensorApi = {
-  getMeasurements: () => api.get('/sensors'), // Будет проксироваться через шлюз
-  getRoomStatus: () => api.get('/rooms/status'),
+  getMeasurements: () => api.get('/data/sensors/'),
+  getSensorById: (id) => api.get(`/data/sensors/${id}`),
 };
 
-// === EVENT LOG SERVICE (Port 8008) ===
+// === ROOMS SERVICE ===
+export const roomApi = {
+  getRooms: () => api.get('/rooms/rooms/'),
+  getRoom: (id) => api.get(`/rooms/rooms/${id}`),
+};
+
+// === EVENT LOG SERVICE ===
+// Gateway: /events/ → event-log-service:8008/events/ ✅
 export const eventApi = {
-  getEvents: () => api.get('/events'),
-  updateEvent: (eventId, updates) => api.patch(`/events/${eventId}`, updates),
+  getEvents: (limit = 100) => api.get(`/events/?skip=0&limit=${limit}`),
+  createEvent: (event) => api.post('/events/', event),
 };
 
-// === ML SERVICE (Port 8005) ===
+// === ML SERVICE ===
+// Gateway: /ml/health → ml-prediction-service:8005/ml/health ✅
 export const mlApi = {
   healthCheck: () => api.get('/ml/health'),
   getPrediction: (data) => api.post('/ml/predict', data),
 };
+
+// === NOTIFICATIONS SERVICE ===
+export const notifApi = {
+  getStatus: () => api.get('/notifications/'),
+};
